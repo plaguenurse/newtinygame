@@ -1,6 +1,7 @@
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.Cursor;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.canvas.Canvas;
@@ -20,6 +21,9 @@ import javafx.scene.transform.*;
 import java.lang.Math;
 import javafx.animation.*;
 import java.util.ArrayList;
+import java.io.*;
+import java.lang.Double;
+
 
 public class Start extends Application
 {
@@ -32,36 +36,36 @@ public class Start extends Application
 		ArrayList<String> input = new ArrayList<String>();
 		ArrayList<Rectangle2D> ground = new ArrayList<Rectangle2D>();
 		ArrayList<Enemy> enemies = new ArrayList<Enemy>();
-		
 		Canvas canvas = new Canvas(width,height);
 		
 		//start platforms
-
-		
-		ground.add(new Rectangle2D(0,0,40,920));
-		ground.add(new Rectangle2D(3640,0,80,920));
-		ground.add(new Rectangle2D(40,800,1680,160));
-		ground.add(new Rectangle2D(40,640,880,160));
-		
-		ground.add(new Rectangle2D(2000,800,1640,160));
-		ground.add(new Rectangle2D(2600,640,240,240));
-		ground.add(new Rectangle2D(3000,440,240,360));
-		ground.add(new Rectangle2D(3400,240,240,560));
-
+		ArrayList<String> levelString = new ArrayList<String>();
+		try
+		{
+			levelString = readFile("levels/1.txt");
+		}
+		catch (IOException ex)
+		{
+			System.exit(1);
+		}
+		for(int i = 0;i<levelString.size();i++)
+		{
+			String[] action = levelString.get(i).split(",");
+			if(action[0].equals("ground") && action.length==5)
+				ground.add(new Rectangle2D(Double.valueOf(action[1]),Double.valueOf(action[2]),Double.valueOf(action[3]),Double.valueOf(action[4])));
+			else if(action[0].equals("Cheesy") && action.length==3)
+				enemies.add(new Cheesy(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
+			else if(action[0].equals("TinyNums") && action.length==3)
+				enemies.add(new TinyNums(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
+			else if(action[0].equals("Bloop") && action.length==3)
+				enemies.add(new Bloop(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
+		}
 		//end platforms
 		//Start Enemies
 		//enemies.add(new NumChucker(3420,480,-1, enemies));
 		
 		//enemies.add(new BlockHaver(590,820, enemies));
-		enemies.add(new Cheesy(960,760, enemies));
-		enemies.add(new Cheesy(2360,760, enemies));
-		enemies.add(new Cheesy(2400,760, enemies));
-		enemies.add(new TinyNums(3240,780, enemies));
-		enemies.add(new TinyNums(3280,780, enemies));
-		enemies.add(new TinyNums(3320,780, enemies));
-		enemies.add(new TinyNums(3360,780, enemies));
-		//enemies.add(new Cheesy(640,820, enemies));
-		enemies.add(new Bloop(2970,480,enemies));
+
 		//Endemies
 		
 		
@@ -95,21 +99,52 @@ public class Start extends Application
 			}
 		});
 		
-		
-		new PersonAction(gc, input, ground, enemies, width, height).start();
+		new MainScreen(root, gc, input, ground, enemies, width, height);
 		
 		
         primaryStage.show();
         
 	}
+	private ArrayList<String> readFile( String file) throws IOException {
+		BufferedReader reader = new BufferedReader( new FileReader (file));
+		String line = null;
+		ArrayList<String> stringList = new ArrayList<String>();
 
-	
+		while( ( line = reader.readLine() ) != null ) {
+			stringList.add(line);
+		}
+
+		return stringList;
+	}
+		
 	public static void main (String args[]) 
 	{
 		launch(args);
 	}
 }
-
+class MainScreen
+{
+	Image splashScreen = new Image("img/splash.png");
+	Image playButtonImage = new Image("img/button.png");
+	public MainScreen(Group root,GraphicsContext gc,ArrayList<String> input, ArrayList<Rectangle2D> ground, ArrayList<Enemy> enemies,int boardWidth,int boardHeight)
+	{
+		gc.drawImage(splashScreen,0,0);
+		Button playButton = new Button("",new ImageView(playButtonImage));
+		playButton.setBorder(null);
+		playButton.setBackground(Background.EMPTY);
+		playButton.setTranslateX(640);
+		playButton.setTranslateY(480);
+		playButton.setCursor(Cursor.HAND);
+		playButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                 new PersonAction(root, gc, input, ground, enemies, boardWidth, boardHeight).start();
+                 root.getChildren().remove(playButton);
+            }
+        });
+		root.getChildren().add(playButton);
+	}
+}
 class MagicPoint
 {
 	double x;
@@ -237,8 +272,9 @@ class PersonAction extends AnimationTimer
 	
 	int boardWidth = 0;
 	int boardHeight = 0;
+	Group root;
 	
-	public PersonAction(GraphicsContext gc,ArrayList<String> input, ArrayList<Rectangle2D> ground, ArrayList<Enemy> enemies,int boardWidth,int boardHeight)
+	public PersonAction(Group root, GraphicsContext gc,ArrayList<String> input, ArrayList<Rectangle2D> ground, ArrayList<Enemy> enemies,int boardWidth,int boardHeight)
 	{
 		this.gc = gc;
 		this.input = input;
@@ -247,7 +283,7 @@ class PersonAction extends AnimationTimer
 		this.boardWidth = boardWidth;
 		this.backwall = new Image("img/background.png");
 		this.enemies = enemies;
-		
+		this.root = root;
 		gc.getCanvas().setTranslateY(-1.0 * (character.gety()-384));
 		
 		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
@@ -900,12 +936,9 @@ class PersonAction extends AnimationTimer
 			if(headtouch)
 			{
 				jump=false;
+				
 				if(yacceleration<0)
-					yacceleration=.3;
-				if(ground.get(headnum-1).getMaxY()>character.gety())
-				{
-					character.sety(ground.get(headnum-1).getMaxY()+.3);
-				}			
+					yacceleration=-yacceleration*.3;		
 			}
 			
 			if(walltouch)
@@ -940,8 +973,12 @@ class PersonAction extends AnimationTimer
 			{
 				gc.getCanvas().setTranslateX(0);
 				gc.getCanvas().setTranslateY(0);
-				gc.drawImage(new Image("img/death.png"),0,0);
+				
 				this.stop();
+				//gc.drawImage(new Image("img/death.png"),0,0);
+				new MainScreen(root, gc, input, ground, enemies, boardWidth, boardHeight);
+				
+
 			}
 			
 	}
