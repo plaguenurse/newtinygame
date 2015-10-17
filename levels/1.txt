@@ -1,0 +1,16 @@
+ground,0,0,40,920
+ground,3640,0,80,920
+ground,40,800,1680,160
+ground,40,640,880,160
+ground,2000,800,1640,160
+ground,2600,640,240,240
+ground,3000,440,240,360
+ground,3400,240,240,560
+Cheesy,960,760
+Cheesy,2360,760
+Cheesy,2400,760
+TinyNums,3240,780
+TinyNums,3280,780
+TinyNums,3320,780
+TinyNums,3360,780
+Bloop,2970,480
