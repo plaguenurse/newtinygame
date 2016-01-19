@@ -1,0 +1,16 @@
+player,80,240
+dimensions,2480,1920
+ground,0,0,40,900
+ground,0,0,2480,40
+ground,0,1880,2480,120
+ground,0,280,520,720
+ground,520,680,360,400
+ground,840,1040,400,480
+ground,1200,1480,360,440
+ground,2440,0,120,1920
+Bloop,520,400,-2
+Bloop,880,760,-2
+Bloop,1240,1080,-2
+Bloop,1560,1520,-2
+Cheesy,1760,1840
+Portal,levels/3.txt,2200,1800

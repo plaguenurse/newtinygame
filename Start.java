@@ -16,6 +16,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.geometry.*;
 import javafx.scene.shape.*;
+import javafx.scene.text.*;
 import javafx.scene.input.*;
 import javafx.scene.transform.*;
 import java.lang.Math;
@@ -31,49 +32,8 @@ public class Start extends Application
 	public void start(Stage primaryStage)
 	{
 		Group root = new Group();
-		int width = 3680;
-		int height = 900;
 		ArrayList<String> input = new ArrayList<String>();
-		ArrayList<Rectangle2D> ground = new ArrayList<Rectangle2D>();
-		ArrayList<Enemy> enemies = new ArrayList<Enemy>();
-		Canvas canvas = new Canvas(width,height);
-		
-		//start platforms
-		ArrayList<String> levelString = new ArrayList<String>();
-		try
-		{
-			levelString = readFile("levels/1.txt");
-		}
-		catch (IOException ex)
-		{
-			System.exit(1);
-		}
-		for(int i = 0;i<levelString.size();i++)
-		{
-			String[] action = levelString.get(i).split(",");
-			if(action[0].equals("ground") && action.length==5)
-				ground.add(new Rectangle2D(Double.valueOf(action[1]),Double.valueOf(action[2]),Double.valueOf(action[3]),Double.valueOf(action[4])));
-			else if(action[0].equals("Cheesy") && action.length==3)
-				enemies.add(new Cheesy(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
-			else if(action[0].equals("TinyNums") && action.length==3)
-				enemies.add(new TinyNums(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
-			else if(action[0].equals("Bloop") && action.length==3)
-				enemies.add(new Bloop(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
-		}
-		//end platforms
-		//Start Enemies
-		//enemies.add(new NumChucker(3420,480,-1, enemies));
-		
-		//enemies.add(new BlockHaver(590,820, enemies));
 
-		//Endemies
-		
-		
-		GraphicsContext gc = canvas.getGraphicsContext2D();
-		
-				
-		
-		root.getChildren().add(canvas);
 		
         Scene TheScene = new Scene(root,1024,768,Color.web("#9eb6b7"));
 		primaryStage.setScene(TheScene);
@@ -99,11 +59,142 @@ public class Start extends Application
 			}
 		});
 		
-		new MainScreen(root, gc, input, ground, enemies, width, height);
+		new MainScreen(root, input);
 		
 		
         primaryStage.show();
         
+	}
+	
+		
+	public static void main (String args[]) 
+	{
+		launch(args);
+	}
+}
+class MainScreen
+{
+	Image splashScreen = new Image("img/splash.png");
+	Image playButtonImage = new Image("img/button.png");
+	int boardWidth;
+	int boardHeight;
+	Portal winpoint = new Portal("levels/1.txt",0,0);
+	public MainScreen(Group root,ArrayList<String> input)
+	{
+		Integer x = new Integer(120);
+		Integer y = new Integer(120);
+
+		ArrayList<Rectangle2D> ground = new ArrayList<Rectangle2D>();
+		ArrayList<Enemy> enemies = new ArrayList<Enemy>();
+
+		ArrayList<String> levelString = new ArrayList<String>();
+		try
+		{
+			levelString = readFile("levels/1.txt");
+		}
+		catch (IOException ex)
+		{
+			System.exit(1);
+		}
+		for(int i = 0;i<levelString.size();i++)
+		{
+			String[] action = levelString.get(i).split(",");
+			if(action[0].equals("ground") && action.length==5)
+				ground.add(new Rectangle2D(Double.valueOf(action[1]),Double.valueOf(action[2]),Double.valueOf(action[3]),Double.valueOf(action[4])));
+			else if(action[0].equals("Cheesy") && action.length==3)
+				enemies.add(new Cheesy(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
+			else if(action[0].equals("Tub") && action.length==3)
+				enemies.add(new Tub(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
+			else if(action[0].equals("TinyNums") && action.length==3)
+				enemies.add(new TinyNums(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
+			else if(action[0].equals("player") && action.length==3)
+			{
+				x = Integer.valueOf(action[1]);
+				y = Integer.valueOf(action[2]);
+			}	
+			else if(action[0].equals("Bloop") && action.length==3)
+				enemies.add(new Bloop(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
+			else if(action[0].equals("Portal") && action.length==4)
+				winpoint = new Portal(action[1],Double.valueOf(action[2]),Double.valueOf(action[3]));
+			else if(action[0].equals("dimensions") && action.length==3)
+			{
+				boardWidth = Integer.valueOf(action[1]);
+				boardHeight = Integer.valueOf(action[2]);
+			}
+		}
+		final int finx = x;
+		final int finy = y;
+		Canvas canvas = new Canvas(boardWidth,boardHeight);
+		GraphicsContext gc = canvas.getGraphicsContext2D();
+		root.getChildren().add(canvas);
+
+		
+		gc.drawImage(splashScreen,0,0);
+		Button playButton = new Button("",new ImageView(playButtonImage));
+		playButton.setBorder(null);
+		playButton.setBackground(Background.EMPTY);
+		playButton.setTranslateX(640);
+		playButton.setTranslateY(480);
+		playButton.setCursor(Cursor.HAND);
+		playButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                 new PersonAction(finx,finy,root, gc, input, ground, enemies, boardWidth, boardHeight,winpoint).start();
+                 root.getChildren().remove(playButton);
+            }
+        });
+		root.getChildren().add(playButton);
+	}
+	public MainScreen(String levelName,Group root,ArrayList<String> input)
+	{
+		int x = 120;
+		int y = 120;
+		ArrayList<Rectangle2D> ground = new ArrayList<Rectangle2D>();
+		ArrayList<Enemy> enemies = new ArrayList<Enemy>();
+		ArrayList<String> levelString = new ArrayList<String>();
+		try
+		{
+			levelString = readFile(levelName);
+		}
+		catch (IOException ex)
+		{
+			System.exit(1);
+		}
+		for(int i = 0;i<levelString.size();i++)
+		{
+			String[] action = levelString.get(i).split(",");
+			if(action[0].equals("ground") && action.length==5)
+				ground.add(new Rectangle2D(Double.valueOf(action[1]),Double.valueOf(action[2]),Double.valueOf(action[3]),Double.valueOf(action[4])));
+			else if(action[0].equals("Cheesy") && action.length==3)
+				enemies.add(new Cheesy(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
+			else if(action[0].equals("player") && action.length==3)
+			{
+				x = Integer.valueOf(action[1]);
+				y = Integer.valueOf(action[2]);
+			}				
+			else if(action[0].equals("Tub") && action.length==3)
+				enemies.add(new Tub(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
+			else if(action[0].equals("TinyNums") && action.length==3)
+				enemies.add(new TinyNums(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
+			else if(action[0].equals("Bloop") && action.length==3)
+				enemies.add(new Bloop(Double.valueOf(action[1]),Double.valueOf(action[2]),enemies));
+			else if(action[0].equals("Bloop") && action.length==4)
+				enemies.add(new Bloop(Double.valueOf(action[1]),Double.valueOf(action[2]),Integer.valueOf(action[3]),enemies));
+			else if(action[0].equals("Portal") && action.length==4)
+				winpoint = new Portal(action[1],Double.valueOf(action[2]),Double.valueOf(action[3]));
+			else if(action[0].equals("dimensions") && action.length==3)
+			{
+				boardWidth = Integer.valueOf(action[1]);
+				boardHeight = Integer.valueOf(action[2]);
+			}
+		}
+		
+		Canvas canvas = new Canvas(boardWidth,boardHeight);
+		GraphicsContext gc = canvas.getGraphicsContext2D();
+		root.getChildren().add(canvas);
+
+		
+		new PersonAction(x,y,root, gc, input, ground, enemies, boardWidth, boardHeight,winpoint).start();
 	}
 	private ArrayList<String> readFile( String file) throws IOException {
 		BufferedReader reader = new BufferedReader( new FileReader (file));
@@ -116,33 +207,49 @@ public class Start extends Application
 
 		return stringList;
 	}
-		
-	public static void main (String args[]) 
-	{
-		launch(args);
-	}
 }
-class MainScreen
+class Portal extends GameElement
 {
-	Image splashScreen = new Image("img/splash.png");
-	Image playButtonImage = new Image("img/button.png");
-	public MainScreen(Group root,GraphicsContext gc,ArrayList<String> input, ArrayList<Rectangle2D> ground, ArrayList<Enemy> enemies,int boardWidth,int boardHeight)
+	Image[] faceset;
+	String levelNext;
+	Portal(String levelNext,double x,double y)
 	{
-		gc.drawImage(splashScreen,0,0);
-		Button playButton = new Button("",new ImageView(playButtonImage));
-		playButton.setBorder(null);
-		playButton.setBackground(Background.EMPTY);
-		playButton.setTranslateX(640);
-		playButton.setTranslateY(480);
-		playButton.setCursor(Cursor.HAND);
-		playButton.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                 new PersonAction(root, gc, input, ground, enemies, boardWidth, boardHeight).start();
-                 root.getChildren().remove(playButton);
-            }
-        });
-		root.getChildren().add(playButton);
+		this.x = x;
+		this.y = y;
+		this.width=80;
+		this.height=80;
+		this.levelNext = levelNext;
+		faceset = new Image[14];
+		faceset[0] = new Image("img/gameelements/portal1.png");
+		faceset[1] = new Image("img/gameelements/portal2.png");
+		faceset[2] = new Image("img/gameelements/portal3.png");
+		faceset[3] = new Image("img/gameelements/portal4.png");
+		faceset[4] = new Image("img/gameelements/portal5.png");
+		faceset[5] = new Image("img/gameelements/portal6.png");
+		faceset[6] = new Image("img/gameelements/portal7.png");
+		faceset[7] = new Image("img/gameelements/portal8.png");
+		faceset[8] = new Image("img/gameelements/portal9.png");
+		faceset[9] = new Image("img/gameelements/portal10.png");
+		faceset[10] = new Image("img/gameelements/portal11.png");
+		faceset[11] = new Image("img/gameelements/portal12.png");
+		faceset[12] = new Image("img/gameelements/portal13.png");
+		faceset[13] = new Image("img/gameelements/portal14.png");
+		face = faceset[0];
+		
+	}
+	String getNextLevel()
+	{
+		return levelNext;
+	}
+	void update(double tick)
+	{
+		if(tick%7==0)
+		{
+			cycle++;
+			if(cycle>13)
+				cycle = 0;
+		}
+		face=faceset[cycle];
 	}
 }
 class MagicPoint
@@ -224,9 +331,15 @@ class MagicPoint
 class PersonAction extends AnimationTimer 
 {
 	int score = 0;
+	int hitTick = 0;
+	double hitX = 0;
+	double hitY = 0;
+	
+	
 	int scoreMultiplier = 1;
 	GraphicsContext gc;
-	Person character = new Person(60,520);
+	Person character = new Person();
+	Text scoreText = new Text(900,36,"Score:");
 	ArrayList<String> input;
 	ArrayList<Rectangle2D> ground;
 	ArrayList<Enemy> enemies = new ArrayList<Enemy>();
@@ -239,6 +352,7 @@ class PersonAction extends AnimationTimer
 	
 	Image fullheart = new Image("img/gameelements/fullheart.png");
 	Image halfheart = new Image("img/gameelements/halfheart.png");
+	Image hitImage = new Image("img/hit.png");
 	
 	Image[] background = new Image[18];
 
@@ -273,8 +387,8 @@ class PersonAction extends AnimationTimer
 	int boardWidth = 0;
 	int boardHeight = 0;
 	Group root;
-	
-	public PersonAction(Group root, GraphicsContext gc,ArrayList<String> input, ArrayList<Rectangle2D> ground, ArrayList<Enemy> enemies,int boardWidth,int boardHeight)
+	Portal winpoint;
+	public PersonAction(int x, int y,Group root, GraphicsContext gc,ArrayList<String> input, ArrayList<Rectangle2D> ground, ArrayList<Enemy> enemies,int boardWidth,int boardHeight, Portal winpoint)
 	{
 		this.gc = gc;
 		this.input = input;
@@ -284,23 +398,29 @@ class PersonAction extends AnimationTimer
 		this.backwall = new Image("img/background.png");
 		this.enemies = enemies;
 		this.root = root;
-		gc.getCanvas().setTranslateY(-1.0 * (character.gety()-384));
+		character.setx(x);
+		character.sety(y);
+		scoreText.setSmooth(false);
+		scoreText.setFont(Font.font("Helvetica", FontWeight.BOLD, 16));
+		scoreText.setFill(Color.web("#777575"));
+		root.getChildren().add(scoreText);
 		
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
-		gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
+		
+		this.winpoint = winpoint;
+		
+		gc.getCanvas().setTranslateY(-1.0 * (character.gety()-384));
+		if (character.gety()+384>boardHeight || character.gety()<=384)
+		{
+			if(character.gety()<=384)
+				gc.getCanvas().setTranslateY(0);
+			else
+				gc.getCanvas().setTranslateY(boardHeight-384);
+				
+		}
+		for(double i = Math.random()*25;i>0;i--)
+		{
+			gameElements.add(new Cloud(Math.random()*boardWidth,Math.random()*768,1,boardWidth));
+		}
 		
 		background[0] = new Image("img/ground/Ground1.png");
 		background[1] = new Image("img/ground/Ground2.png");
@@ -325,6 +445,7 @@ class PersonAction extends AnimationTimer
 	@Override
 	public void handle(long currentNanoTime)
 	{
+			scoreText.setText("Score:"+score);
 			if(character.gety()>boardHeight || character.getHealth()<1)
 			{
 				dead = true;
@@ -374,31 +495,14 @@ class PersonAction extends AnimationTimer
 				gc.drawImage(character.getSpikeImage(),character.getSpikeX(),character.getSpikeY());
 			}
 			//End Draw Character
-			//Draw Enemies + Checking
-			for(int i = 0;i<enemies.size();i++)
+
+			if(hitTick>0)
 			{
-				if(enemies.get(i).isPresent())
-				{
-					if(enemies.get(i).update(ground,character.getBoundingBoxSpike(),tick))
-					{
-						if(!enemies.get(i).isPresent())
-						{
-							gameElements.add(new Score(enemies.get(i).getX()-10, enemies.get(i).getY() - 10, 100*scoreMultiplier));
-							score+=scoreMultiplier*100;
-							scoreMultiplier*=2;
-						}
-						spiketouch=true;
-						spikenum=enemies.get(i).getCollisionBox();
-					}
-					gc.drawImage(enemies.get(i).getImage(),enemies.get(i).getX(),enemies.get(i).getY());
-				}
+				gc.drawImage(hitImage,hitX,hitY);
+				hitTick--;
 			}
-			//End Enemy Behaviour
-			
-			
-			
-			
-			
+			winpoint.update(tick);
+			gc.drawImage(winpoint.getImage(),winpoint.getX(),winpoint.getY());
 			
 			//Ground
 			ArrayList<MagicPoint> corners = new ArrayList<MagicPoint>();
@@ -659,6 +763,32 @@ class PersonAction extends AnimationTimer
 				corners.get(i).render(gc,background);
 			}
 			//End Ground
+			
+			//Draw Enemies + Checking
+			for(int i = 0;i<enemies.size();i++)
+			{
+				if(enemies.get(i).isPresent())
+				{
+					if(enemies.get(i).update(ground,character,tick))
+					{
+						if(!enemies.get(i).isPresent())
+						{
+							gameElements.add(new Score(enemies.get(i).getX()-10, enemies.get(i).getY() - 10, 100*scoreMultiplier));
+							score+=scoreMultiplier*100;
+							scoreMultiplier*=2;
+						}
+						spiketouch=true;
+						spikenum=enemies.get(i).getCollisionBox();
+						hitTick=13;
+						hitX = character.getBoundingBoxSpike().getMinX();
+						hitY = character.getBoundingBoxSpike().getMinY();
+					}
+					gc.drawImage(enemies.get(i).getImage(),enemies.get(i).getX(),enemies.get(i).getY());
+				}
+			}
+			//End Enemy Behaviour
+			
+			
 			//Game Elements
 			for(int i = 0;i<gameElements.size();i++)
 			{
@@ -694,6 +824,15 @@ class PersonAction extends AnimationTimer
 						countdown = 60;
 					}
 				}
+			}
+			if(winpoint.getCollisionBox().intersects(character.getBoundingBox()))
+			{
+				gc.getCanvas().setTranslateX(0);
+				gc.getCanvas().setTranslateY(0);
+				gc.clearRect(0,0,boardWidth,boardHeight);
+				root.getChildren().remove(scoreText);
+				this.stop();
+				new MainScreen(winpoint.getNextLevel(),root,input);
 			}
 			//End Enemy Attacks
 			//Keyboard input
@@ -973,10 +1112,12 @@ class PersonAction extends AnimationTimer
 			{
 				gc.getCanvas().setTranslateX(0);
 				gc.getCanvas().setTranslateY(0);
-				
+				gc.clearRect(0,0,boardWidth,boardHeight);
+				root.getChildren().remove(scoreText);
+				new MainScreen(root, input);
 				this.stop();
 				//gc.drawImage(new Image("img/death.png"),0,0);
-				new MainScreen(root, gc, input, ground, enemies, boardWidth, boardHeight);
+			
 				
 
 			}
@@ -1004,7 +1145,7 @@ class PersonAction extends AnimationTimer
 		{
 			for(int i = 0;i<ground.size();i++)
 			{
-				if(!ground.get(i).equals(testPoint) && (ground.get(i).contains(testPoint.getMaxX()+3,testPoint.getMinY()+3)||ground.get(i).contains(testPoint.getMaxX()-3,testPoint.getMinY()-3)))
+				if(!ground.get(i).equals(testPoint) && (ground.get(i).contains(testPoint.getMaxX()+3,testPoint.getMinY()+3)||ground.get(i).contains(testPoint.getMaxX()-3,testPoint.getMinY()-3)) && !ground.get(i).contains(testPoint.getMaxX()+3,testPoint.getMinY()-3))
 					return true;
 			}
 		}
@@ -1237,9 +1378,10 @@ abstract class Enemy
 	boolean present = true;
 	double x;
 	double y;
+	
 	Image[] faceset;
 	Image face;
-	abstract boolean update(ArrayList<Rectangle2D> ground, Rectangle2D spike, double tick);
+	abstract boolean update(ArrayList<Rectangle2D> ground,Person character, double tick);
 	Image getImage()
 	{
 		return face;
@@ -1251,6 +1393,14 @@ abstract class Enemy
 	boolean isPresent()
 	{
 		return present;
+	}
+	void setX(double x)
+	{
+		this.x = x;
+	}
+	void setY(double y)
+	{
+		this.y = y;
 	}
 	boolean getHurty()
 	{
@@ -1304,10 +1454,10 @@ class NumChucker extends Enemy
 		
 		this.face= faceset[0];
 	}
-	boolean update(ArrayList<Rectangle2D> ground, Rectangle2D spike, double tick)
+	boolean update(ArrayList<Rectangle2D> ground, Person character, double tick)
 	{
 		hit=false;
-		if(this.getCollisionBox().intersects(spike))
+		if(this.getCollisionBox().intersects(character.getBoundingBoxSpike()))
 		{
 			hit=true;
 			health--;
@@ -1382,9 +1532,9 @@ class Numjectile extends Enemy
 	
 		this.face= faceset[0];
 	}
-	boolean update(ArrayList<Rectangle2D> ground, Rectangle2D spike, double tick)
+	boolean update(ArrayList<Rectangle2D> ground, Person character, double tick)
 	{
-		if(this.getCollisionBox().intersects(spike))
+		if(this.getCollisionBox().intersects(character.getBoundingBoxSpike()))
 		{
 			present=false;
 			hurty=false;
@@ -1425,9 +1575,9 @@ class BlockHaver extends Enemy
 		
 		this.face= faceset[0];
 	}
-	boolean update(ArrayList<Rectangle2D> ground, Rectangle2D spike, double tick)
+	boolean update(ArrayList<Rectangle2D> ground, Person character, double tick)
 	{
-		if(this.getCollisionBox().intersects(spike))
+		if(this.getCollisionBox().intersects(character.getBoundingBoxSpike()))
 		{
 			present=false;
 			hurty=false;
@@ -1541,6 +1691,8 @@ class BlockHaver extends Enemy
 class Cheesy extends Enemy
 {
 	boolean move = false;
+	boolean fall = true;
+	boolean wallhit = false;
 	ArrayList<Enemy> enemyList;
 	Cheesy(double x, double y, ArrayList<Enemy> enemyList)
 	{
@@ -1550,7 +1702,7 @@ class Cheesy extends Enemy
 		this.y = y;
 		this.direction = 1;
 		this.enemyList = enemyList;
-		faceset = new Image[10];
+		faceset = new Image[12];
 		this.faceset[0] = new Image("img/mrcheesy/MrCheesy1.png");
 		this.faceset[1] = new Image("img/mrcheesy/MrCheesy2.png");
 		this.faceset[2] = new Image("img/mrcheesy/MrCheesy3.png");
@@ -1561,17 +1713,22 @@ class Cheesy extends Enemy
 		this.faceset[7] = new Image("img/mrcheesy/MrCheesy8.png");
 		this.faceset[8] = new Image("img/mrcheesy/MrCheesy9.png");
 		this.faceset[9] = new Image("img/mrcheesy/MrCheesy10.png");
+		this.faceset[10] = new Image("img/mrcheesy/MrCheesy11.png");
+		this.faceset[11] = new Image("img/mrcheesy/MrCheesy12.png");
 		this.face= faceset[0];
 	}
-	boolean update(ArrayList<Rectangle2D> ground, Rectangle2D spike, double tick)
+	boolean update(ArrayList<Rectangle2D> ground, Person character, double tick)
 	{
-		if(this.getCollisionBox().intersects(spike))
+		if(this.getCollisionBox().intersects(character.getBoundingBoxSpike()))
 		{
 			present=false;
 			hurty=false;
 			hit=true;
+			enemyList.add(new DeathAnimation(direction==1?faceset[11]:faceset[12],x,y,width,height));
 		}
 		move = false;
+		fall = true;
+		wallhit = false;
 		if(direction==1)
 		{
 			if(cycle>4)
@@ -1614,26 +1771,199 @@ class Cheesy extends Enemy
 			if(enemyList.get(i).getCollisionBox().contains(this.x+42,this.y+38) && direction == 1 && enemyList.get(i).isPresent())
 			{
 				move = false;
+				i=enemyList.size();
 			}
 			else if(enemyList.get(i).getCollisionBox().contains(this.x-2,this.y+38) && direction == -1 && enemyList.get(i).isPresent())
 			{
 				move = false;
+				i=enemyList.size();
+			}
+			
+		}
+		
+		for(int i = 0;i< ground.size();i++)
+		{
+			if(ground.get(i).contains(this.x+20,this.y+42))
+			{
+				fall=false;
 			}
 		}
-		if(!move)
+		if(fall)
+		{
+			this.y+=4;
+		}
+		if(!move && !fall)
 		{
 			direction = -direction;
 		}
-		else
+		if(move)
 		{
 			this.x+=direction;
 		}
+		
 		return hit;
+	}
+}
+class Tub extends Enemy
+{
+	boolean move = false;
+	boolean fall = true;
+	boolean wallhit = false;
+	ArrayList<Enemy> enemyList;
+	Tub(double x, double y, ArrayList<Enemy> enemyList)
+	{
+		this.width = 60;
+		this.height = 60;
+		this.x = x;
+		this.y = y;
+		this.direction = 1;
+		this.enemyList = enemyList;
+		faceset = new Image[12];
+		this.faceset[0] = new Image("img/tub/tub1.png");
+		this.faceset[1] = new Image("img/tub/tub2.png");
+		this.faceset[2] = new Image("img/tub/tub3.png");
+		this.faceset[3] = new Image("img/tub/tub4.png");
+		this.faceset[4] = new Image("img/tub/tub5.png");
+		this.faceset[5] = new Image("img/tub/tub6.png");
+		this.faceset[6] = new Image("img/tub/tub7.png");
+		this.faceset[7] = new Image("img/tub/tub8.png");
+		this.faceset[8] = new Image("img/tub/tub9.png");
+		this.faceset[9] = new Image("img/tub/tub10.png");
+		this.faceset[10] = new Image("img/tub/tub11.png");
+		this.faceset[11] = new Image("img/tub/tub12.png");
+		this.face= faceset[0];
+	}
+	Rectangle2D getCollisionBox()
+	{
+		return new Rectangle2D(this.x,this.y+20,this.width,this.height-20);
+	}
+	Rectangle2D getHeadBox()
+	{
+		return new Rectangle2D(this.x,this.y,this.width,this.height-40);
+	}
+	boolean update(ArrayList<Rectangle2D> ground, Person character, double tick)
+	{
+		if(this.getCollisionBox().intersects(character.getBoundingBoxSpike()))
+		{
+			present=false;
+			hurty=false;
+			hit=true;
+		}
+		if(this.getHeadBox().intersects(character.getBoundingBoxFloor()))
+		{
+			
+		}
+
+		
+		move = false;
+		fall = true;
+		wallhit = false;
+		if(direction==1)
+		{
+			if(cycle>5)
+				cycle = 0;
+		}
+		else 
+		{
+			if(cycle < 6 || cycle > 11)
+				cycle = 6;
+		}
+		if(tick%7==0)
+		{
+			face=faceset[cycle];
+			cycle++;
+		}
+		
+		for(int i = 0;i< ground.size();i++)
+		{
+			if(ground.get(i).contains(this.x+62,this.y+58) && direction == 1)
+			{
+				move = false;
+				i=ground.size();
+			}
+			else if(ground.get(i).contains(this.x-2,this.y+58) && direction == -1)
+			{
+				move = false;
+				i=ground.size();
+			}
+			else if(ground.get(i).contains(this.x+60,this.y+62) && direction == 1)
+			{
+				move=true;
+			}
+			else if(ground.get(i).contains(this.x,this.y+62) && direction == -1)
+			{
+				move=true;
+			}
+		}
+		for(int i = 0;i< enemyList.size() && move;i++)
+		{
+			if(enemyList.get(i).getCollisionBox().contains(this.x+62,this.y+58) && direction == 1 && enemyList.get(i).isPresent())
+			{
+				move = false;
+				i=enemyList.size();
+			}
+			else if(enemyList.get(i).getCollisionBox().contains(this.x-2,this.y+58) && direction == -1 && enemyList.get(i).isPresent())
+			{
+				move = false;
+				i=enemyList.size();
+			}
+			
+		}
+		
+		for(int i = 0;i< ground.size();i++)
+		{
+			if(ground.get(i).contains(this.x+30,this.y+62))
+			{
+				fall=false;
+			}
+		}
+		if(fall)
+		{
+			this.y+=4;
+		}
+		if(!move && !fall)
+		{
+			direction = -direction;
+		}
+		if(move)
+		{
+			this.x+=direction;
+		}
+		for(int i = 0;i< enemyList.size() && move;i++)
+		{
+			if(!enemyList.get(i).equals(this) && this.getHeadBox().intersects(enemyList.get(i).getCollisionBox()))
+			{
+				if(move)
+				{
+					enemyList.get(i).setX(enemyList.get(i).getX()+direction);
+				}
+				enemyList.get(i).setY(y-enemyList.get(i).getHeight());
+			}
+		}
+		return hit;
+	}
+}
+class DeathAnimation extends Enemy
+{
+	DeathAnimation(Image image, double x, double y, int width, int height)
+	{
+		this.hurty=false;
+		this.width = width;
+		this.height = height;
+		this.x = x;
+		this.y = y;
+		face = image;
+	}
+	boolean update(ArrayList<Rectangle2D> ground, Person character, double tick)
+	{
+		this.y+=8;
+		return false;
 	}
 }
 class TinyNums extends Enemy
 {
 	boolean move = false;
+	boolean fall = false;
 	ArrayList<Enemy> enemyList;
 	TinyNums(double x, double y, ArrayList<Enemy> enemyList)
 	{
@@ -1655,15 +1985,16 @@ class TinyNums extends Enemy
 
 		this.face= faceset[0];
 	}
-	boolean update(ArrayList<Rectangle2D> ground, Rectangle2D spike, double tick)
+	boolean update(ArrayList<Rectangle2D> ground,Person character, double tick)
 	{
-		if(this.getCollisionBox().intersects(spike))
+		if(this.getCollisionBox().intersects(character.getBoundingBoxSpike()))
 		{
 			present=false;
 			hurty=false;
 			hit=true;
 		}
 		move = false;
+		fall = true;
 		if(direction==1)
 		{
 			if(cycle>3)
@@ -1720,6 +2051,36 @@ class TinyNums extends Enemy
 		{
 			this.x+=direction;
 		}
+		
+		//falling
+		for(int i = 0;i< ground.size();i++)
+		{
+			if(ground.get(i).contains(this.x+20,this.y+22) && direction == 1)
+			{
+				fall=false;
+			}
+			else if(ground.get(i).contains(this.x,this.y+22) && direction == -1)
+			{
+				fall=false;
+			}
+		}
+		for(int i = 0;i< enemyList.size() && fall;i++)
+		{
+			if(enemyList.get(i).getCollisionBox().contains(this.x+20,this.y+22) && direction == 1 && enemyList.get(i).isPresent())
+			{
+				fall = false;
+			}
+			else if(enemyList.get(i).getCollisionBox().contains(this.x,this.y+22) && direction == -1 && enemyList.get(i).isPresent())
+			{
+				fall = false;
+			}
+		}
+		if(fall)
+		{
+			this.y+=4;
+		}
+		
+		
 		return hit;
 	}
 }
@@ -1741,7 +2102,7 @@ class Projectile extends Enemy
 		this.faceset[0] = new Image("img/bullet.png");
 		this.face = faceset[0];
 	}
-	boolean update(ArrayList<Rectangle2D> ground, Rectangle2D spike, double tick)
+	boolean update(ArrayList<Rectangle2D> ground, Person character, double tick)
 	{
 		for(int i = 0;i< ground.size() && present;i++)
 		{
@@ -1783,9 +2144,42 @@ class Bloop extends Enemy
 		this.faceset[8] = new Image("img/bloop/bloop9.png");
 		this.face= faceset[0];
 	}
-	boolean update(ArrayList<Rectangle2D> ground, Rectangle2D spike, double tick)
+	Bloop(double x, double y,int dir, ArrayList<Enemy> enemyList)
 	{
-		if(this.getCollisionBox().intersects(spike))
+		this.width = 30;
+		this.height = 40;
+		this.x = x;
+		this.y = y;
+		this.direction = dir;
+		this.enemyList = enemyList;
+		faceset = new Image[18];
+		this.faceset[0] = new Image("img/bloop/bloop1.png");
+		this.faceset[1] = new Image("img/bloop/bloop2.png");
+		this.faceset[2] = new Image("img/bloop/bloop3.png");
+		this.faceset[3] = new Image("img/bloop/bloop4.png");
+		this.faceset[4] = new Image("img/bloop/bloop5.png");
+		this.faceset[5] = new Image("img/bloop/bloop6.png");
+		this.faceset[6] = new Image("img/bloop/bloop7.png");
+		this.faceset[7] = new Image("img/bloop/bloop8.png");
+		this.faceset[8] = new Image("img/bloop/bloop9.png");
+		this.faceset[9] = new Image("img/bloop/bloop10.png");
+		this.faceset[10] = new Image("img/bloop/bloop11.png");
+		this.faceset[11] = new Image("img/bloop/bloop12.png");
+		this.faceset[12] = new Image("img/bloop/bloop13.png");
+		this.faceset[13] = new Image("img/bloop/bloop14.png");
+		this.faceset[14] = new Image("img/bloop/bloop15.png");
+		this.faceset[15] = new Image("img/bloop/bloop16.png");
+		this.faceset[16] = new Image("img/bloop/bloop17.png");
+		this.faceset[17] = new Image("img/bloop/bloop18.png");
+		this.face= faceset[0];
+		if(direction==2||direction==-2)
+		{
+			this.face=faceset[9];
+		}
+	}
+	boolean update(ArrayList<Rectangle2D> ground, Person character, double tick)
+	{
+		if(this.getCollisionBox().intersects(character.getBoundingBoxSpike()))
 		{
 			present=false;
 			hurty = false;
@@ -1794,33 +2188,57 @@ class Bloop extends Enemy
 		move = false;
 		if(tick%95==15)
 		{
-			enemyList.add(new Projectile(this.x,this.y+6,Math.atan2((spike.getMaxY()-this.y),(spike.getMaxX())- this.x),3.0));
+			enemyList.add(new Projectile(this.x,this.y+6,Math.atan2((character.getBoundingBoxSpike().getMaxY()-this.y),(character.getBoundingBoxSpike().getMaxX())- this.x),3.0));
 		}
 		
 		if(!(tick%95<30))
 		{
 			if(tick%8==0)
 			{
-				if(cycle>5) 
+				if((cycle>5)&& (direction==1||direction==-1)) 
 					cycle = 0;
+				if(cycle>17&& (direction==2||direction==-2))
+					cycle= 9;
 				face=faceset[cycle];
 				cycle++;
 			}
-			for(int i = 0;i< ground.size() && !move;i++)
+			for(int i = 0;i< ground.size();i++)
 			{
-				if(ground.get(i).contains(this.x+28,this.y+42) && direction == -1)
+				if(direction==1||direction==-1)
 				{
-					i=ground.size();
+					if(ground.get(i).contains(this.x+28,this.y+42) && direction == -1)
+					{
+						move=false;
+						i=ground.size();
+					}
+					else if(ground.get(i).contains(this.x+32,this.y+42)	&& direction == -1)
+					{
+						this.y+=2;
+						move=true;
+					}
+					else if(ground.get(i).contains(this.x+32,this.y-7) && direction == 1)
+					{
+						this.y-=2;
+						move=true;
+					}
 				}
-				else if(ground.get(i).contains(this.x+32,this.y+42)	&& direction == -1)
+				else
 				{
-					this.y+=2;
-					move=true;
-				}
-				else if(ground.get(i).contains(this.x+32,this.y-7) && direction == 1)
-				{
-					this.y-=2;
-					move=true;
+					if(ground.get(i).contains(this.x+28,this.y+42)&& direction == -2)
+					{
+						move=false;
+						i=ground.size();
+					}
+					else if(ground.get(i).contains(this.x-2,this.y+42)	&& direction == -2)
+					{
+						this.y+=2;
+						move=true;
+					}
+					else if(ground.get(i).contains(this.x-2,this.y-7) && direction == 2)
+					{
+						this.y-=2;
+						move=true;
+					}
 				}
 			}
 			if(!move)
@@ -1833,8 +2251,10 @@ class Bloop extends Enemy
 		{
 			if(tick%7==0)
 			{
-				if(cycle<5 || cycle>8) 
+				if((cycle<5 || cycle>8)&& (direction==1||direction==-1) )
 					cycle = 5;
+				if((cycle<9 || cycle>17)&& (direction==2||direction==-2) )
+					cycle = 9;
 				face=faceset[cycle];
 				cycle++;
 			}
